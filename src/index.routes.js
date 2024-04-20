@@ -3,6 +3,7 @@ import authRouter from './modules/Auth/auth.routes.js';
 import categoryRouter from './modules/Category/category.routes.js';
 import SubCategoryRouter from './modules/Sub-category/subCategory.routes.js';
 import BrandRouter from './modules/Brand/Brand.routes.js';
+import ProductRouter from './modules/Product/product.routes.js';
 
 
 
@@ -11,5 +12,6 @@ export {
     authRouter,
     categoryRouter,
     SubCategoryRouter,
-    BrandRouter
+    BrandRouter,
+    ProductRouter
 }

@@ -14,4 +14,9 @@ router.post('/addSubCategory/:categoryId',auth(endPointRoles.ADD_CATEGORY),multe
     extinsions:allowedExtensions.image
 }).single('image'),asyncHandler(SubCategoryController.addSubCategory));
 
+router.delete('/deleteSubCategory/:subCategoryId/:categoryId',auth(endPointRoles.ADD_CATEGORY),asyncHandler(SubCategoryController.deleteSubCategory));
+router.get('/getAllSubCategoriesWithBrands',asyncHandler(SubCategoryController.getAllSubCategoriesWithBrands));
+
+router.put('/updateSubCategory/:subCategoryId',auth(endPointRoles.ADD_CATEGORY),multerMiddleWareHost({extinsions:allowedExtensions.image}).single('image'),asyncHandler(SubCategoryController.updateSubCategory));
+
 export default router;

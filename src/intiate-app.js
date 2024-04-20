@@ -1,6 +1,8 @@
 import db_connection from "../DB/db.connection.js";
 import * as routers from './index.routes.js';
 import { globalResponses } from "./middlewares/Global-responses.js";
+import { rollbackSavedDocuments } from "./middlewares/Rollback-saved-documents.middleware.js";
+import { rollbackUploadedFiles } from "./middlewares/Rollback-uploaded-files.middleware.js";
 
 
 export const intiateApp = (app,express)=>{
@@ -14,7 +16,8 @@ export const intiateApp = (app,express)=>{
     app.use('/category',routers.categoryRouter);
     app.use('/SubCategory',routers.SubCategoryRouter);
     app.use('/brand',routers.BrandRouter);
-    app.use(globalResponses)
+    app.use('/product',routers.ProductRouter);
+    app.use(globalResponses,rollbackUploadedFiles,rollbackSavedDocuments)
 
     db_connection();
     app.listen(port,()=>{console.log(`the server is running on port ${port}`);});

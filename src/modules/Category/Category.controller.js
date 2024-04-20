@@ -39,7 +39,7 @@ export const addCategory = async (req, res, next) => {
     const { secure_url, public_id } = await cloudinaryConnection().uploader.upload(req.file.path, {
         folder: `${process.env.MAIN_FOLDER}/Categories/${folderId}`
     })
-
+    req.folder = `${process.env.MAIN_FOLDER}/Categories/${folderId}`;
     // 5 - make the category object 
     const category = {
         name,
@@ -54,6 +54,7 @@ export const addCategory = async (req, res, next) => {
 
     // 6 - put the category in the database
     const newCategory = await Category.create(category);
+    req.savedDocument = { model : Category , _id : newCategory._id };
     // 7 - check if the category created
     if (!newCategory) {
         return next(new Error('unable to create category', { cause: 500 }));
@@ -77,7 +78,9 @@ export const addCategory = async (req, res, next) => {
         // 5.1 - check if the new category name diffrent from the old one
         // 5.2 - check if the new category name is already exist
         // 5.3 - update the category name and slug
-    // 6 - check if the user want to update the image 
+    // 6 - check if the user want to update the image
+        // 6.1 - check if the user upload an image
+        // 6.2 - update the image data 
     // 7 - set value for the updatedBy field
     // 8 - return the response
 */
@@ -111,10 +114,11 @@ export const updateCategory = async (req, res, next) => {
 
     // 6 - check if the user want to update the image 
     if (oldPublicId) {
+        // 6.1 - check if the user upload an image
         if (!req.file) {
             return next(new Error('please upload an image', { cause: 400 }));
         }
-
+        // 6.2 - update the image data 
         const newPublicId = oldPublicId.split(`${category.folderId}/`)[1];
         const { secure_url, public_id } = await cloudinaryConnection().uploader.upload(req.file.path, {
             folder: `${process.env.MAIN_FOLDER}/Categories/${category.folderId}`,
@@ -138,8 +142,9 @@ export const updateCategory = async (req, res, next) => {
 // ===================== get all categories ================= //
 
 /*
-    // 1 - get all categories 
-    // 2 - return the response
+    // 1 - get all categories
+    // 2 - check if there is any categories
+    // 3 - return the response
 */
 export const getAllCategories = async (req, res, next) => {
     // 1 - get all categories 
@@ -149,7 +154,11 @@ export const getAllCategories = async (req, res, next) => {
             path: 'Brands'
         }]
     }]);
-    // 2 - return the response
+    // 2 - check if there is any categories
+    if(!allCategories.length){
+        return next(new Error('No categories found', { cause: 404 }));
+    }
+    // 3 - return the response
     return res.status(200).json({
         success: true,
         Msg: 'All categories fetched successfully',
@@ -162,10 +171,11 @@ export const getAllCategories = async (req, res, next) => {
 /*
     // 1 - destructing the requird data
     // 2 - delete the category
-    // 3 - delete the related subCategories
-    // 4 - delete the related brands 
-    // 5 - delete the content of the category folder 
-    // 6 - delete the category folder
+    // 3 - check if the category is deleted
+    // 4 - delete the related subCategories
+    // 5 - delete the related brands 
+    // 6 - delete the content of the category folder 
+    // 7 - delete the category folder
 */
 
 export const deleteCategory = async (req, res, next) => {
@@ -173,28 +183,29 @@ export const deleteCategory = async (req, res, next) => {
     const {categoryId} = req.params;
     // 2 - delete the category
     const deletedCategory = await Category.findByIdAndDelete(categoryId);
+    // 3 - check if the category is deleted
     if(!deletedCategory){
         return next(new Error('Category not found ', { cause: 404 }));
     }
-    // 3 - delete the related subCategories
-    const subCategories = await subCategroyModel.deleteMany({deleteCategory});
+    // 4 - delete the related subCategories
+    const subCategories = await subCategroyModel.deleteMany({categoryId});
     if(subCategories.deletedCount <= 0){
         console.log(subCategories.deletedCount);
         console.log(`there is no related subCategories`);
     }
 
-    // 4 - delete the related brands 
-    const brands = await Brands.deleteMany({deleteCategory});
+    // 5 - delete the related brands 
+    const brands = await Brands.deleteMany({categoryId});
     if(brands.deletedCount <= 0){
         console.log(brands.deletedCount);
         console.log(`there is no related brands`);
     }
-    // 5 - delete the content of the category folder 
+    // 6 - delete the content of the category folder from host
     await cloudinaryConnection().api.delete_resources_by_prefix(`${process.env.MAIN_FOLDER}/Categories/${deletedCategory.folderId}`);
-    // 6 - delete the category folder
+    // 7 - delete the category folder from host
     await cloudinaryConnection().api.delete_folder(`${process.env.MAIN_FOLDER}/Categories/${deletedCategory.folderId}`);
 
-    // 7 - return the response
+    // 8 - return the response
     return res.status(200).json({
         success: true,
         Msg: 'Category deleted successfully',
