@@ -17,6 +17,7 @@ export const intiateApp = (app,express)=>{
     app.use('/SubCategory',routers.SubCategoryRouter);
     app.use('/brand',routers.BrandRouter);
     app.use('/product',routers.ProductRouter);
+    app.use('/cart',routers.CartRouter);
     app.use(globalResponses,rollbackUploadedFiles,rollbackSavedDocuments)
 
     db_connection();
