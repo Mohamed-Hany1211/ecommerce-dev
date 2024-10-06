@@ -18,6 +18,7 @@ export const intiateApp = (app,express)=>{
     app.use('/brand',routers.BrandRouter);
     app.use('/product',routers.ProductRouter);
     app.use('/cart',routers.CartRouter);
+    app.use('/coupon',routers.CouponRouter);
     app.use(globalResponses,rollbackUploadedFiles,rollbackSavedDocuments)
 
     db_connection();
