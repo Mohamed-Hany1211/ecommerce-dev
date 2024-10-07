@@ -22,7 +22,7 @@ const couponSchema = new mongoose.Schema({
         type:Boolean,
         default:false
     },
-    idPercentage:{
+    isPercentage:{
         type:Boolean,
         default:false
     },

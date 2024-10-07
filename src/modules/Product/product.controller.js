@@ -12,19 +12,19 @@ import { ApiFeatures } from '../../utils/api-features.js';
 
 // =========================== add product =========================== // 
 /*
-    // 1 - destructing data from req.body
-    // 2 - destructing data from req.query
-    // 3 - destructing data from req.authUser
-    // 4 - brand check
-    // 5 - category check
-    // 6 - subCategory check
-    // 7 - who will be authorized to add a product
-    // 8 - generate the slug of product title
-    // 9 - applied price calculations
-    // 10 - images
-    // 11 - make the product object
-    // 12 - create the product
-    // 13 - return response
+    1 - destructing data from req.body
+    2 - destructing data from req.query
+    3 - destructing data from req.authUser
+    4 - brand check
+    5 - category check
+    6 - subCategory check
+    7 - who will be authorized to add a product
+    8 - generate the slug of product title
+    9 - applied price calculations
+    10 - images
+    11 - make the product object
+    12 - create the product
+    13 - return response
 */
 export const addProduct = async (req, res, next) => {
     // 1 - destructing data from req.body
