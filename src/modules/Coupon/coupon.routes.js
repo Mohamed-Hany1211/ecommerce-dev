@@ -11,6 +11,7 @@ const router = Router();
 
 router.post('/addCoupon',auth(endpointsRoles.ADD_COUPON),validationMiddleware(validator.addCouponSchema),expressAsyncHandler(couponController.addCoupon));
 
+router.post('/validateCoupon',auth(endpointsRoles.ADD_COUPON),expressAsyncHandler(couponController.ValidateCoupon));
 
 
 

@@ -2,6 +2,7 @@
 import Coupon from '../../../DB/models/coupon.model.js';
 import CouponUsers from '../../../DB/models/coupon-users.model.js';
 import User from '../../../DB/models/user.model.js';
+import {applyCouponValidations} from '../../utils/coupon.validation.js';
 // ===================== add coupon ==================== //
 /*
     1 - destructing coupon's info
@@ -64,4 +65,27 @@ export const addCoupon = async (req,res,next)=>{
     req.savedDocuments = { model: CouponUsers, _id: couponUsers._id };
     // 10 - return the response
     res.status(201).json({message:'Coupon added successfully', coupon , couponUsers});
+}
+
+// ============================ validateCoupon ================== //
+/*
+    1 - destructing the coupon code
+    2 - destructing userId
+    3 - check if the coupon is valid
+    4 - return the response
+*/
+export const ValidateCoupon = async (req,res,next) =>{
+    // 1 - destructing the coupon code
+    const {couponCode} = req.body;
+    // 2 - destructing userId
+    const {_id} = req.authUser;
+    // 3 - check if the coupon is valid
+    const isCouponValid = await applyCouponValidations(couponCode,_id);
+    if(isCouponValid.status) return next({message: isCouponValid.message , cause:isCouponValid.status});
+    // 4 - return the response
+    return res.json({
+        success: true,
+        message: 'Coupon is valid',
+        data: isCouponValid
+    })
 }

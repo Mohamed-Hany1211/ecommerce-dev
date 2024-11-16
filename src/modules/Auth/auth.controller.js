@@ -1,8 +1,8 @@
 // modules imports
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 // files imports
 import User from '../../../DB/models/user.model.js';
-import bcrypt from 'bcryptjs';
 import sendEmailService from '../../services/Send-mail.service.js';
 
 // ======================= signUp api ========================= //
