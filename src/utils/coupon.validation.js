@@ -1,5 +1,6 @@
-// files imports
+// modules imports
 import { DateTime } from 'luxon';
+// files imports
 import CouponUser from '../../DB/models/coupon-users.model.js';
 import Coupon from '../../DB/models/coupon.model.js';
 

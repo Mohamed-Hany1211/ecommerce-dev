@@ -23,6 +23,7 @@ export const intiateApp = (app,express)=>{
     app.use('/product',routers.ProductRouter);
     app.use('/cart',routers.CartRouter);
     app.use('/coupon',routers.CouponRouter);
+    app.use('/order',routers.OrderRouter);
     app.use(globalResponses,rollbackUploadedFiles,rollbackSavedDocuments)
     cronToChangeExpiredCoupons();
     gracefulShutdown();

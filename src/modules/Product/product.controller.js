@@ -102,69 +102,76 @@ export const addProduct = async (req, res, next) => {
 }
 
 // ==================== update product ====================== // 
+/*
 
-export const updateProduct = async (req, res, next) => {
-    // 1 - destructing data from req.body
-    const { title, description, basePrice, discount, stock, specifications, oldPublicId } = req.body;
-    // 2 - destructing data from req.params
-    const { productId } = req.params;
-    // 3 - destructing data from req.authUser
-    const addedBy = req.authUser._id;
-    // 4 - check if the product is in the database
-    const product = await Product.findById(productId);
-    if (!product) {
-        return next(new Error('product not found ', { cause: 404 }));
-    }
-    // 7 - who will be authorized to add a product
-    if (req.authUser.role !== systemRoles.SUPER_ADMIN && product.addedBy.toString() !== addedBy.toString()) {
-        return next(new Error(`you are not authorized to add a product to this product`, { cause: 403 }));
-    }
+*/
+// export const updateProduct = async (req, res, next) => {
+//     // 1 - destructing data from req.body
+//     const { title, description, basePrice, discount, stock, specifications, oldPublicId } = req.body;
+//     // 2 - destructing data from req.params
+//     const { productId } = req.params;
+//     // 3 - destructing data from req.authUser
+//     const addedBy = req.authUser._id;
+//     // 4 - check if the product is in the database
+//     const product = await Product.findById(productId);
+//     if (!product) {
+//         return next(new Error('product not found ', { cause: 404 }));
+//     }
+//     // 7 - who will be authorized to add a product
+//     if (req.authUser.role !== systemRoles.SUPER_ADMIN && product.addedBy.toString() !== addedBy.toString()) {
+//         return next(new Error(`you are not authorized to add a product to this product`, { cause: 403 }));
+//     }
 
-    if (title) {
-        product.title = title
-        product.slug = slugify(title, { lower: true, replacement: '-' })
-    }
-    if (description) product.desc = desc
-    if (specifications) product.specs = JSON.parse(specs)
-    if (stock) product.stock = stock
+//     if (title) {
+//         product.title = title
+//         product.slug = slugify(title, { lower: true, replacement: '-' })
+//     }
+//     if (description) product.desc = desc
+//     if (specifications) product.specs = JSON.parse(specs)
+//     if (stock) product.stock = stock
 
-    // prices changes
-    // const appliedPrice = (basePrice || product.basePrice) - ((basePrice || product.basePrice) * (discount || product.discount) / 100)
-    const appliedPrice = (basePrice || product.basePrice) * (1 - ((discount || product.discount) / 100))
-    product.appliedPrice = appliedPrice
+//     // prices changes
+//     // const appliedPrice = (basePrice || product.basePrice) - ((basePrice || product.basePrice) * (discount || product.discount) / 100)
+//     const appliedPrice = (basePrice || product.basePrice) * (1 - ((discount || product.discount) / 100))
+//     product.appliedPrice = appliedPrice
 
-    if (basePrice) product.basePrice = basePrice
-    if (discount) product.discount = discount
+//     if (basePrice) product.basePrice = basePrice
+//     if (discount) product.discount = discount
 
-    if (oldPublicId) {
+//     if (oldPublicId) {
 
-        if (!req.file) return next({ cause: 400, message: 'Please select new image' })
+//         if (!req.file) return next({ cause: 400, message: 'Please select new image' })
 
-        const folderPath = product.imgs[0].public_id.split(`${product.folderId}/`)[0]
-        const newPublicId = oldPublicId.split(`${product.folderId}/`)[1];
-        const { secure_url } = await cloudinaryConnection().uploader.upload(req.file.path, {
-            folder: folderPath + `${product.folderId}`,
-            public_id: newPublicId
-        })
-        product.imgs.map((img) => {
-            if (img.public_id === oldPublicId) {
-                img.secure_url = secure_url
-            }
-        })
-        req.folder = folderPath + `${product.folderId}`
-    }
+//         const folderPath = product.imgs[0].public_id.split(`${product.folderId}/`)[0]
+//         const newPublicId = oldPublicId.split(`${product.folderId}/`)[1];
+//         const { secure_url } = await cloudinaryConnection().uploader.upload(req.file.path, {
+//             folder: folderPath + `${product.folderId}`,
+//             public_id: newPublicId
+//         })
+//         product.imgs.map((img) => {
+//             if (img.public_id === oldPublicId) {
+//                 img.secure_url = secure_url
+//             }
+//         })
+//         req.folder = folderPath + `${product.folderId}`
+//     }
 
 
-    await product.save()
+//     await product.save()
 
-    res.status(200).json({ success: true, message: 'Product updated successfully', data: product })
-}
+//     res.status(200).json({ success: true, message: 'Product updated successfully', data: product })
+// }
 
 // =================== get all products ====================== //
-/**/
+/*
+    1 - destructing the page and size from req.query
+    2 - applying the api features to products
+    3 - return the response
+*/
 export const getAllProducts = async (req, res, next) => {
-    // destructing the page and size from req.query
+    // 1 - destructing the page and size from req.query
     const {page ,size,sort,...query} = req.query;
+    // 2 - applying the api features to products
     const features = new ApiFeatures(req.query,Product.find())
     //.pagination({page ,size})
     // .sort(sort)
@@ -172,6 +179,7 @@ export const getAllProducts = async (req, res, next) => {
     .filter(query)
     const products = await features.mongooseQuery;
     if(!products) return next({message:'an error occour while fetching the products',cause:500});
+    // 3 - return the response
     return res.status(200).json({
         success: true,
         message: 'Products fetched successfully',
