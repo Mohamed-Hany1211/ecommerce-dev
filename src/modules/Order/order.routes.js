@@ -14,9 +14,9 @@ router.post('/convertFromCartToOrder',auth(systemRoles.USER),expressAsyncHandler
 
 router.put('/deliverOrder/:orderId',auth(systemRoles.DELIEVERY_ROLE),expressAsyncHandler(orderController.deliverOrder));
 
+router.post('/stripePay/:orderId',auth([systemRoles.USER]),expressAsyncHandler(orderController.payWithStripe));
 
-
-
+router.post('/webhook',expressAsyncHandler(orderController.stripeWebhookLocal));
 
 
 export default router;

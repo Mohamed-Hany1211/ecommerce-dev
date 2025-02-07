@@ -24,6 +24,10 @@ export const intiateApp = (app,express)=>{
     app.use('/cart',routers.CartRouter);
     app.use('/coupon',routers.CouponRouter);
     app.use('/order',routers.OrderRouter);
+    app.use('*', (req,res,next)=>{
+        res.status(404).json({message:'Not Found',cause:404});
+    })
+
     app.use(globalResponses,rollbackUploadedFiles,rollbackSavedDocuments)
     cronToChangeExpiredCoupons();
     gracefulShutdown();

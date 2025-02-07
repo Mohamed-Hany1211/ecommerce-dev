@@ -7,6 +7,7 @@ import { applyCouponValidations } from '../../utils/coupon.validation.js';
 import { checkProductAvailability } from '../Cart/utils/check-product-in-DB.js';
 import { getUserCart } from "../Cart/utils/get-user-cart.js";
 import { DateTime } from 'luxon';
+import { createCheckoutSession, createStripeCoupon } from '../../payment-handler/stripe.js';
 // ======================== add order ======================== //
 /*
     1 - destructing data from body
@@ -222,27 +223,98 @@ export const convertFromCartToOrder = async (req, res, next) => {
     3 - check if the order updated or not
     4 - return the response
 */
-export const deliverOrder = async (req,res,next) => {
+export const deliverOrder = async (req, res, next) => {
     // 1 - destructing order id
-    const {orderId} = req.params;
+    const { orderId } = req.params;
     // 2 - update the order status after meeting the specified conditions
     const updatedOrder = await Order.findOneAndUpdate({
         _id: orderId,
-        orderStatus: {$in:['Paid','Placed']}
-    },{
+        orderStatus: { $in: ['Paid', 'Placed'] }
+    }, {
         orderStatus: 'Delivered',
-        isDelivered:true,
+        isDelivered: true,
         deliveredAt: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
         deliveredBy: req.authUser._id
-    },{
+    }, {
         new: true
     });
     // 3 - check if the order updated or not
-    if(!updatedOrder) return next({message:'order cannot be delivered',cause:404});
+    if (!updatedOrder) return next({ message: 'order cannot be delivered', cause: 404 });
     // 4 - return the response
     res.status(200).json({
         success: true,
         message: 'order delivered successfully',
         data: updatedOrder
+    })
+}
+
+// ===================== order payment with stripe ======================= //
+/**/
+export const payWithStripe = async (req, res, next) => {
+    // - destructing order id
+    const { orderId } = req.params;
+    // - destructing the logged in userId
+    const { _id: userId } = req.authUser;
+
+    // - get the order details
+    const order = await Order.findOne({
+        _id: orderId,
+        user: userId,
+        orderStatus: 'Pending'
+    });
+    // - check if the order exists
+    if (!order) return next({ message: 'order not found or already paid', cause: 404 });
+    // - creating the payment object
+    const paymentObject = {
+        customer_email: req.authUser.email,
+        metadata: { orderId: order._id.toString() },
+        discounts: [],
+        line_items: order.orderItems.map(item => {
+            return {
+                price_data: {
+                    currency: 'EGP',
+                    product_data: {
+                        name: item.title
+                    },
+                    unit_amount: item.price * 100
+                },
+                quantity: item.quantity
+            }
+        })
+    }
+
+    // coupon check
+    if(order.coupon){
+        const stripeCoupon = await createStripeCoupon({couponId:order.coupon});
+        if(stripeCoupon.status) return next({message:stripeCoupon.message,cause:400});
+        paymentObject.discounts.push({
+            coupon: stripeCoupon.id
+        })
+    }
+
+    // - calling the checkout page method that has been created
+    const checkoutSession = await createCheckoutSession(paymentObject);
+    // - rturning the response 
+    res.status(200).json({
+        success: true,
+        message: 'payment initiated successfully',
+        data: checkoutSession
+    })
+}
+
+
+
+// =========================================================================== //
+
+export const stripeWebhookLocal = async (req,res,next) =>{
+    const orderId = req.body.data.object.metadata.orderId;
+    const confirmedOrder = await Order.findByIdAndUpdate(orderId,{
+        orderStatus: 'Paid',
+        paidAt:DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
+        isPaid:true
+    });
+    if(!confirmedOrder) return next({message:'order not found or cannot be confirmed',cause:404});
+    res.status(200).json({
+        message: 'webhook received successfully'
     })
 }

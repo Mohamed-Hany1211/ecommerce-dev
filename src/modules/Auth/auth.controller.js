@@ -94,8 +94,7 @@ export const verifyEmail = async (req, res, next) => {
     // 4 - return the response
     res.status(200).json({
         success: true,
-        message: 'email verified successfully , please try to login',
-        data: findUser
+        message: 'email verified successfully , please try to login'
     })
 }
 
