@@ -18,5 +18,6 @@ router.post('/stripePay/:orderId',auth([systemRoles.USER]),expressAsyncHandler(o
 
 router.post('/webhook',expressAsyncHandler(orderController.stripeWebhookLocal));
 
+router.post('/refundOrder/:orderId',auth([systemRoles.ADMIN,systemRoles.SUPER_ADMIN]),expressAsyncHandler(orderController.refundOrder));
 
 export default router;

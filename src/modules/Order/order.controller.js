@@ -7,7 +7,7 @@ import { applyCouponValidations } from '../../utils/coupon.validation.js';
 import { checkProductAvailability } from '../Cart/utils/check-product-in-DB.js';
 import { getUserCart } from "../Cart/utils/get-user-cart.js";
 import { DateTime } from 'luxon';
-import { createCheckoutSession, createStripeCoupon } from '../../payment-handler/stripe.js';
+import { confirmPaymentIntent, createCheckoutSession, createPaymentIntent, createStripeCoupon, refundPaymentIntent } from '../../payment-handler/stripe.js';
 // ======================== add order ======================== //
 /*
     1 - destructing data from body
@@ -105,10 +105,6 @@ export const createOrder = async (req, res, next) => {
     });
 
 }
-
-
-
-
 
 // ========================= convert from cart to order =========================== //
 /*
@@ -249,22 +245,32 @@ export const deliverOrder = async (req, res, next) => {
 }
 
 // ===================== order payment with stripe ======================= //
-/**/
+/*
+    1 - destructing order id
+    2 - destructing the logged in userId
+    3 - get the order
+    4 - check if the order exists
+    5 - creating the payment object
+    6 - coupon check
+    7 - calling the checkout page method that has been created
+    8 - create payment intent
+    9 - storing the payment intent id in the database
+    10 - rturning the response 
+*/
 export const payWithStripe = async (req, res, next) => {
-    // - destructing order id
+    // 1 - destructing order id
     const { orderId } = req.params;
-    // - destructing the logged in userId
+    // 2 - destructing the logged in userId
     const { _id: userId } = req.authUser;
-
-    // - get the order details
+    // 3 - get the order
     const order = await Order.findOne({
         _id: orderId,
         user: userId,
         orderStatus: 'Pending'
     });
-    // - check if the order exists
+    // 4 - check if the order exists
     if (!order) return next({ message: 'order not found or already paid', cause: 404 });
-    // - creating the payment object
+    // 5 - creating the payment object
     const paymentObject = {
         customer_email: req.authUser.email,
         metadata: { orderId: order._id.toString() },
@@ -282,19 +288,22 @@ export const payWithStripe = async (req, res, next) => {
             }
         })
     }
-
-    // coupon check
-    if(order.coupon){
-        const stripeCoupon = await createStripeCoupon({couponId:order.coupon});
-        if(stripeCoupon.status) return next({message:stripeCoupon.message,cause:400});
+    // 6 - coupon check
+    if (order.coupon) {
+        const stripeCoupon = await createStripeCoupon({ couponId: order.coupon });
+        if (stripeCoupon.status) return next({ message: stripeCoupon.message, cause: 400 });
         paymentObject.discounts.push({
             coupon: stripeCoupon.id
         })
     }
-
-    // - calling the checkout page method that has been created
+    // 7 - calling the checkout page method that has been created
     const checkoutSession = await createCheckoutSession(paymentObject);
-    // - rturning the response 
+    // 8 - create payment intent
+    const paymentIntent = await createPaymentIntent({ amount: order.totalPrice, currency: 'EGP' });
+    // 9 - storing the payment intent id in the database
+    order.payment_intent = paymentIntent.id;
+    await order.save();
+    // 10 - rturning the response 
     res.status(200).json({
         success: true,
         message: 'payment initiated successfully',
@@ -304,17 +313,50 @@ export const payWithStripe = async (req, res, next) => {
 
 
 
-// =========================================================================== //
-
-export const stripeWebhookLocal = async (req,res,next) =>{
+// ======================== confirm order =========================== //
+/*
+    1 - getting the order id from metadata
+    2 - confirming the order by updating its status to paid
+    3 - confirm payment intent
+    4 - return the response just to terminate the api call
+*/
+export const stripeWebhookLocal = async (req, res, next) => {
+    // 1 - getting the order id from metadata
     const orderId = req.body.data.object.metadata.orderId;
-    const confirmedOrder = await Order.findByIdAndUpdate(orderId,{
+    // 2 - confirming the order by updating its status to paid
+    const confirmedOrder = await Order.findByIdAndUpdate(orderId, {
         orderStatus: 'Paid',
-        paidAt:DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
-        isPaid:true
+        paidAt: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
+        isPaid: true
     });
-    if(!confirmedOrder) return next({message:'order not found or cannot be confirmed',cause:404});
+    if (!confirmedOrder) return next({ message: 'order not found or cannot be confirmed', cause: 404 });
+    // 3 - confirm payment intent
+    const confirmPaymentIntentDetails = await confirmPaymentIntent({ paymentIntentId: confirmedOrder.payment_intent });
+    // 4 - return the response just to terminate the api call
     res.status(200).json({
         message: 'webhook received successfully'
+    })
+}
+
+
+// ======================== refund api ================================ //
+/**/
+export const refundOrder = async (req, res, next) => {
+    // 1 - getting the order id from params
+    const { orderId } = req.params;
+    // 2 - finding the order
+    const findOrder = await Order.findOne({ _id: orderId, orderStatus: 'Paid'});
+    if (!findOrder) return next({ message: 'order not found or cannot be refunded', cause: 404 });
+    // 3 - refund payment intent
+    const refund = await refundPaymentIntent({paymentIntentId:findOrder.payment_intent});
+    if (refund.status) return next({ message: refund.message, cause: 400 });
+    // 4 - update the order status to refunded and save
+    findOrder.orderStatus = 'Refunded';
+    await findOrder.save();
+    // 5 - return the response
+    return res.status(200).json({
+        success: true,
+        message: 'order refunded successfully',
+        data: refund
     })
 }

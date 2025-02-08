@@ -47,3 +47,59 @@ export const createStripeCoupon = async ({ couponId }) => {
     const stripeCoupon = await stripe.coupons.create(couponObject);
     return stripeCoupon;
 }
+
+
+// create payment method
+export const createStripePaymentMethod = async ({token})=>{
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const paymentMethod = await stripe.paymentMethods.create({
+        type: 'card',
+        card: {
+            token
+        }
+    });
+    return paymentMethod;
+}
+
+// create a stripe payment intent
+export const createPaymentIntent = async ({ amount, currency }) => {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const paymentMethod = await createStripePaymentMethod({token:'tok_visa'});
+    const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount * 100,
+        currency,
+        automatic_payment_methods:{
+            enabled: true,
+            allow_redirects:'never'
+        },
+        payment_method: paymentMethod.id
+    });
+    return paymentIntent;
+}
+
+// retrive stripe paymentIntent
+export const retrivePaymentIntent = async ({paymentIntentId})=>{
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    return paymentIntent;
+}
+
+
+// confirm stripe paymentIntent
+export const confirmPaymentIntent = async ({paymentIntentId}) =>{
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const paymentIntentDetails = await retrivePaymentIntent({paymentIntentId});
+    const paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId,{
+        payment_method: paymentIntentDetails.payment_method
+    });
+    return paymentIntent;
+}
+
+// refund a stripe payment intent
+export const refundPaymentIntent = async ({paymentIntentId})=>{
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const refund = await stripe.refunds.create({
+        payment_intent: paymentIntentId
+    });
+    return refund;
+}
