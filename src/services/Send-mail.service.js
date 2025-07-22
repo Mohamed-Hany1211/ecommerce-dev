@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-import jwt from 'jsonwebtoken';
 const sendEmailService = async ({
     to = '', // 'email1' or 'email1,email2,email3'
     subject = 'no-reply',

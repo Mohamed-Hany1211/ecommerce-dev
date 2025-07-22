@@ -1,16 +1,14 @@
-import { Schema, model } from "mongoose";
+import mongoose from "mongoose";
 import { systemRoles } from "../../src/utils/system-roles.js";
-
-
-
-const userSchema = new Schema({
-    username:{
+import { userStatus } from "../../src/utils/user-status.js";
+import { userGender } from "../../src/utils/user-gender.js";
+const userSchema = new mongoose.Schema({
+    userName:{
         type:String,
         required:true,
         minlength:3,
-        maxlength:20,
+        maxlength:30,
         trim:true,
-        lowercase:true
     },
     email:{
         type:String,
@@ -22,7 +20,7 @@ const userSchema = new Schema({
     password:{
         type:String,
         required:true,
-        minlength:6
+        minlength:8
     },
     phoneNumbers:[{
         type:String,
@@ -49,7 +47,26 @@ const userSchema = new Schema({
     isloggedIn:{
         type:Boolean,
         default:false
+    },
+    token:String,
+    ResetPasswordOTP:String,
+    mediaFolderId:String,
+    profilePicture:{
+        secure_url:String,
+        public_id:String
+    },
+    status:{
+        type:String,
+        enum:Object.values(userStatus),
+        default:userStatus.OFFLINE
+    },
+    gender:{
+        type:String,
+        enum:Object.values(userGender),
+        default:userGender.NOT_SPECIFIED
     }
 },{timestamps:true});
 
-export default model('User',userSchema);
+
+
+export default mongoose.models.User || mongoose.model('User', userSchema);
