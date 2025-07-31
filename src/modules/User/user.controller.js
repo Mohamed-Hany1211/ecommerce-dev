@@ -82,44 +82,49 @@ export const updateUser = async (req, res, next) => {
 
 // ============================ delete user profile ======================= //
 
-/**
-    // 1 - destructing the requierd data
+/*
+    // 1 - destructing the user id from authUser
     // 2 - get the user by id and delete him
-    // 3 - return the response 
- */
+    // 3 - check if the user deleted or not
+    // 4 - return the response 
+*/
 
 export const deleteUserProfile = async (req,res,next) =>{
-    // 1 - destructing the requierd data
+    // 1 - destructing the user id from authUser
     const { _id } = req.authUser;
     // 2 - get the user by id and delete him
     const deletedUser = await User.findByIdAndDelete(_id);
+    // 3 - check if the user deleted or not
     if(!deletedUser){
         return next(new Error('user not found ', { cause: 404 }));
     }
-    // 3 - return the response 
+    // 4 - return the response 
     res.status(200).json({
         success:true,
-        message:'the account has been deleted'
+        message:'the account deleted successfully'
     });
 }
 
 // =============================== get user profile data ===================== //
 /*
-    // 1 - destructing the requierd data
+    // 1 - destructing the user id from the authUser
     // 2 - get the user by id
-    // 3 - return the response 
+    // 3 - check if the user found or not 
+    // 4 - return the response 
 */
 export const getUserProfile = async (req,res,next)=>{
-    // 1 - destructing the requierd data
+    // 1 - destructing the user id from the authUser
     const { _id } = req.authUser;
     // 2 - get the user by id
     const user = await User.findById(_id);
+    // 3 - check if the user found or not 
     if(!user){
-        return next(new Error('user not found ', { cause: 404 }));
+        return next({message:'User Not Found', cause:404});
     }
-    // 3 - return the response 
+    // 4 - return the response 
     res.status(200).json({
         success:true,
+        message:`user profile data fetched successfully`,
         data:user
     });
 }

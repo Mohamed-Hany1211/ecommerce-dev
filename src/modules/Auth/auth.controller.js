@@ -126,7 +126,7 @@ export const signIn = async (req, res, next) => {
     const userFound = await User.findOne({ email, isEmailVerified: true });
     // 2.1 - check if the user is found
     if (!userFound) {
-        return next({ message: 'Invalid login credentials , please signUp', cause: 404 });
+        return next({ message: 'Invalid login credentials or email is not verified', cause: 404 });
     }
     // 3 - compare password with hashed password
     const verifyPass = bcrypt.compareSync(password, userFound.password);

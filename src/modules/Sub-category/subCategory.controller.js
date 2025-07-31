@@ -10,48 +10,55 @@ import Brand from '../../../DB/models/brand.model.js';
 
 // ========================= Add SubCategory ===================== //
 /*
-    // 1 - destructing the requird data
-    // 2 - check if the category name is already in the database
-    // 3 - check if category exist by using categoryId
-    // 4 - generate the slug of subCategroy name
-    // 5 - upload image to cloudinary
-    // 6 - make the subCategroy object 
-    // 7 - put the subCategroy in the database
-    // 8 - check if the subCategroy created
-    // 9 - return the response
+    // 1 - destructing the name of the subCategory from the request body
+    // 2 - destructing the user id from the authUser
+    // 3 - destructing the category id from the request param
+    // 4 - check if the subCategory name is already in the database
+    // 5 - check if category exist by using categoryId
+    // 6 - generate the slug of subCategroy name
+    // 7 - upload image to cloudinary
+        // 7.1 - generate a unique string for the folder id
+        // 7.2 - upload the image to cloudinary
+    // 8 - make the subCategroy object 
+    // 9 - put the subCategroy in the database
+    // 10 - save the created category in the request object for rollback in case of error
+    // 11 - check if the subCategroy created
+    // 12 - return the response
 */
 export const addSubCategory = async (req, res, next) => {
-    // 1 - destructing the requird data
+    // 1 - destructing the name of the subCategory from the request body
     const { name } = req.body;
+    // 2 - destructing the user id from the authUser
     const { _id } = req.authUser;
+    // 3 - destructing the category id from the request param
     const { categoryId } = req.params;
-    // 2 - check if the category name is already in the database
+    // 4 - check if the subCategory name is already in the database
     const isSubCategroyExist = await subCategroyModel.findOne({ name });
     if (isSubCategroyExist) {
-        return next(new Error('subCategroy is Already exist ', { cause: 409 }));
+        return next({message: 'subCategroy is already exist ', status: 409});
     }
-    // 3 - check if category exist by using categoryId
-
+    // 5 - check if category exist by using categoryId
     const category = await Category.findById(categoryId);
     if (!category) {
-        return next(new Error('Category not found', { cause: 404 }));
+        return next({message: 'category not found', status: 404});
     }
-
-    // 4 - generate the slug of subCategroy name
+    // 6 - generate the slug of subCategroy name
     const slug = slugify(name, '-');
-    // 5 - upload image to cloudinary
+    // 7 - upload image to cloudinary
     if (!req.file) {
-        return next(new Error('please upload image', { cause: 400 }));
+        return next({message: 'please upload image', status: 400});
     }
-
+        // 7.1 - generate a unique string for the folder id
     const folderId = generateUniqueString(7);
+        // 7.2 - upload the image to cloudinary
     const { secure_url, public_id } = await cloudinaryConnection().uploader.upload(req.file.path, {
         folder: `${process.env.MAIN_FOLDER}/Categories/${category.folderId}/SubCategories/${folderId}`
     })
 
-    // 6 - make the subCategroy object 
+    // 8 - make the subCategroy object 
     const subCategroy = {
         name,
+        categoryId,
         slug,
         img: {
             secure_url,
@@ -59,20 +66,21 @@ export const addSubCategory = async (req, res, next) => {
         },
         folderId,
         addedBy: _id,
-        categoryId
     }
 
-    // 7 - put the subCategroy in the database
-    const newsubCategroy = await subCategroyModel.create(subCategroy);
-    // 8 - check if the subCategroy created
-    if (!newsubCategroy) {
-        return next(new Error('unable to create subCategroy', { cause: 500 }));
+    // 9 - put the subCategroy in the database
+    const newSubCategroy = await subCategroyModel.create(subCategroy);
+    // 10 - save the created category in the request object for rollback in case of error
+    req.savedDocument = { model : subCategroyModel , _id : newSubCategroy._id };
+    // 11 - check if the subCategroy created
+    if (!newSubCategroy) {
+        return next({message: 'unable to create subCategroy', status: 500});
     }
-    // 9 - return the response
+    // 12 - return the response
     return res.status(201).json({
         success: true,
-        Msg: 'subCategroy created successfully',
-        data: newsubCategroy
+        message: 'subCategroy created successfully',
+        data: newSubCategroy
     });
 }
 
@@ -160,58 +168,66 @@ export const getAllSubCategoriesWithBrands = async (req, res, next) => {
 */
 
 export const updateSubCategory = async (req, res, next) => {
-    // 1 - destructing the required data
+    // 1 - destructing the sub category id from the request param
     const { subCategoryId } = req.params;
+    // 2 - destructing the new sub category name and old public id from the request body
     const { name, oldPublicId } = req.body;
+    // 3 - destructing the user id from the authUser
     const { _id } = req.authUser;
-    // 2 - find the subCategory
+
+    // 4 - find the subCategory
     const requiredSubCategory = await subCategroyModel.findById(subCategoryId);
-    // 3 - check if the subCategory is exist
+    // 5 - check if the subCategory is exist
     if (!requiredSubCategory) {
-        return next(new Error('subCategroy not found', { cause: 404 }));
+        return next({message: 'subCategroy not found', status: 404});
     }
-    // 4 - check if the superAdmin wants to update the name
+    // 6 - check if the superAdmin wants to update the name
     if (name) {
-        // 4.1 - check if the subCategory name is already in the database
+        // 6.1 - check if the subCategory name is already in the database
         const isSubCategroyExist = await subCategroyModel.findOne({ name });
         if (isSubCategroyExist) {
-            return next(new Error('subCategroy is Already exist ', { cause: 409 }));
+            return next({message: 'subCategroy is already exist', status: 409});
         }
-        // 4.2 check if the super admin update the name with the same value of old name 
+        // 6.2 check if the super admin update the name with the same value of old name 
         if (name === requiredSubCategory.name) {
-            return next(new Error('please enter diffrent name from existing one', { cause: 409 }));
+            return next({message: 'please enter diffrent name from the existing one', status: 409});
         }
-        // 4.3 - update the name
+        // 6.3 - update the name
         requiredSubCategory.name = name;
-        // 4.4 - update the slug
+        // 6.4 - update the slug
         requiredSubCategory.slug = slugify(name, '-');
     }
 
-    // 5 - check if user want to change image
+    // 7 - check if user want to change image
     if (oldPublicId) {
-        // 5.1 - check if the user upload an image
+        // 7.1 - check if the user upload an image
         if(!req.file){
-            return next(new Error('please upload an image',{cause:400}));
+            return next({message: 'please upload an image', status: 400});
         }
-        // 5.2 - update the image data 
+        // 7.2 - creating the new public id 
         const newPublicId = oldPublicId.split(`${requiredSubCategory.folderId}/`)[1];
+        // 7.3 - creating the folder path
         const folderPath = oldPublicId.split(`${requiredSubCategory.folderId}/`)[0];
+        // 7.4 - uploading the image to cloudinary
         const {secure_url} = await cloudinaryConnection().uploader.upload(req.file.path,{
             folder:`${folderPath}${requiredSubCategory.folderId}/`,
             public_id:newPublicId
         })
+        // 7.5 - update the image secure url
         requiredSubCategory.img.secure_url = secure_url;
+        // 7.6 - save the folder path in the request object for rollback in case of error
+        req.folder = `${process.env.MAIN_FOLDER}/Categories/${requiredSubCategory.folderId}/SubCategories/${requiredSubCategory.folderId}`;
     }
 
-    // 6 - update the updatedBy feild
+    // 8 - update the updatedBy feild
     requiredSubCategory.updatedBy = _id;
-    // 7 - save the changes
+    // 9 - save the changes
     await requiredSubCategory.save();
 
-    // 8 - return the response
+    // 10 - return the response
     return res.status(200).json({
         success: true,
-        Msg:'subCategroy updated successfully',
+        message:'subCategroy updated successfully',
         data: requiredSubCategory
     })
 }

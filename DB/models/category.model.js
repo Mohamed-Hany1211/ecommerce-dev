@@ -1,7 +1,7 @@
 // modules imports
-import { Schema, model } from "mongoose";
+import mongoose from "mongoose";
 
-const CategroySchema = new Schema({
+const CategroySchema = new mongoose.Schema({
     name: {
         type: String, required: true, unique: true, trim: true
     },
@@ -16,10 +16,10 @@ const CategroySchema = new Schema({
         type: String, required: true, unique: true
     },
     addedBy: {   // superAdmin
-        type: Schema.Types.ObjectId, ref: 'User', required: true 
+        type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true 
     }, 
     updatedBy: {  // superAdmin
-        type: Schema.Types.ObjectId, ref: 'User'
+        type: mongoose.Schema.Types.ObjectId, ref: 'User'
     }  
 
 }, {
@@ -35,4 +35,4 @@ CategroySchema.virtual('SubCategories',{
     foreignField: 'categoryId'
 })
 
-export default model('Category', CategroySchema);
+export default mongoose.models.Category || mongoose.model('Category', CategroySchema);
