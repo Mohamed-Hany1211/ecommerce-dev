@@ -14,7 +14,8 @@ import sendEmailService from '../../services/Send-mail.service.js';
         // 3.1 - check if the email is sent successfully
     // 4 - save the password hashed
     // 5 - creating a new user document in the database
-        // 5.1 - check if the user is created successfully
+    // 5.1 - save the created User in the request object for rollback in case of error
+    // 5.2 - check if the user is created successfully
     // 6- return the response
 */
 
@@ -65,7 +66,9 @@ export const signUp = async (req, res, next) => {
         age,
         gender
     })
-    // 5.1 - check if the user is created successfully
+    // 5.1 - save the created User in the request object for rollback in case of error
+    req.savedDocument = { model : User , _id : newUser._id };
+    // 5.2 - check if the user is created successfully
     if (!newUser) {
         return next({ message: 'unable to create user', cause: 500 });
     }

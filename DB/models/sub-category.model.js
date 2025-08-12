@@ -33,7 +33,7 @@ const SubCategroySchema = new Schema({
 
 // brands virtual populate
 SubCategroySchema.virtual('Brands', {
-    ref: 'Brand',
+    ref: 'Brands',
     localField: '_id',
     foreignField: 'subCategoryId'
 })

@@ -1,7 +1,7 @@
-import { Schema , model } from "mongoose";
+import mongoose from "mongoose";
 
 // ========================= create brand schema =========================== // 
-const brandSchema = new Schema({
+const brandSchema = new mongoose.Schema({
     name: {
         type: String, required: true, trim: true
     },
@@ -16,20 +16,18 @@ const brandSchema = new Schema({
         type: String, required: true, unique: true
     },
     addedBy: {   // Admin
-        type: Schema.Types.ObjectId, ref: 'User', required: true 
+        type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true 
     }, 
     updatedBy: {  // Admin
-        type: Schema.Types.ObjectId, ref: 'User'
+        type: mongoose.Schema.Types.ObjectId, ref: 'User'
     },
     categoryId:{
-        type:Schema.Types.ObjectId, required: true, ref:'Category'
+        type: mongoose.Schema.Types.ObjectId, required: true, ref:'Category'
     },
     subCategoryId:{
-        type:Schema.Types.ObjectId, required: true, ref:'subCategroies'
+        type: mongoose.Schema.Types.ObjectId, required: true, ref:'subCategroies'
     }
 },{timestamps:true})
 
-const Brand = model('Brand',brandSchema);
-
-export default Brand;
+export default mongoose.models.Brands || mongoose.model('Brands',brandSchema);
 

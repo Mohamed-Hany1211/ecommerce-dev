@@ -7,7 +7,7 @@ import { multerMiddleWareHost } from "../../middlewares/multer.middleware.js";
 import { auth } from "../../middlewares/auth.middleware.js";
 import { allowedExtensions } from "../../utils/Allowed-extensions.js";
 import { endPointRoles } from "./Category.endPoints.js";
-
+import {validationMiddleware} from '../../middlewares/validation.middleware.js';
 const router = Router();
 
 router.post('/addCategory',auth(endPointRoles.ADD_CATEGORY),multerMiddleWareHost({

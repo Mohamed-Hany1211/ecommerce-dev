@@ -69,7 +69,7 @@ export const addCategory = async (req, res, next) => {
     // 12 - return the response
     return res.status(201).json({
         success: true,
-        Msg: 'Category created successfully',
+        message: 'Category created successfully',
         data: newCategory
     });
 }
@@ -144,7 +144,7 @@ export const updateCategory = async (req, res, next) => {
     // 9 - return the response
     return res.status(200).json({
         success: true,
-        Msg: 'Category updated successfully',
+        message: 'Category updated successfully',
         data: category
     })
 }
